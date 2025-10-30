@@ -66,7 +66,7 @@ firebase_options.dart
 ```
 
 **Models** : beer.dart, ingredient.dart, taste_profile.dart
-**Services** : firestore_service.dart, auth_service.dart, beer_filter_service.dart
+**Services** : firestore_service.dart, auth_service.dart, beer_filter_service.dart, localized_text.dart
 **Features** :
 	-	/client/ → interface de sélection et navigation utilisateur
 	-	/admin/ → tableau de bord, édition du catalogue et statistiques
@@ -93,10 +93,11 @@ Le projet est géré selon une approche **Agile**, avec un suivi des **EPICs** e
 - Flutter ≥ 3.19  
 - Compte Firebase configuré  
 - Accès à l’application Firebase via FlutterFire CLI  
+- Le projet fonctionne avec un JDK 17 (testé). 
 
 ### 🔹 Étapes d’installation
 ```bash
-git clone https://github.com/<repo>/brewmatch.git
+git clone https://github.com/heg-web/F25-icola.git
 cd brewmatch
 flutter pub get
 flutterfire configure
@@ -127,7 +128,7 @@ Inclura :
 
 | Nom & Prénom | mail |
 |------|---------------------|
-| **Mandeleu Mélissa** | insert hear please |
+| **Mandeleu Mélissa** | insert please |
 | **Lehmann Ismaël** | ismael.lehmann@he-arc.ch |
 
 
