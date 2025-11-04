@@ -106,8 +106,6 @@ class Beer {
     if (raw is! List) {
       return <DocumentReference<Map<String, dynamic>>>[];
     }
-
-    final firestore = FirebaseFirestore.instance;
     final references = <DocumentReference<Map<String, dynamic>>>[];
 
     for (final entry in raw) {
@@ -128,6 +126,11 @@ class Beer {
       }
 
       if (entry is String && entry.isNotEmpty) {
+        // Only access FirebaseFirestore.instance when we need to resolve a
+        // string path to a DocumentReference. This prevents requiring a
+        // Firebase app for tests that already provide DocumentReference
+        // instances (mocked or real).
+        final firestore = FirebaseFirestore.instance;
         references.add(
           firestore
               .doc(entry)

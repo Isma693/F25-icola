@@ -89,4 +89,91 @@ class LocalizedText {
 
     return locale.substring(0, match.start);
   }
+
+  /// Resolve the best available translation for [locale].
+  ///
+  /// Resolution order:
+  /// 1. exact locale (lowercased)
+  /// 2. base locale (e.g. 'en-US' -> 'en')
+  /// 3. [fallbackLocale]
+  /// 4. first non-empty translation available
+  /// 5. empty string if nothing found
+  static String resolveBest(
+    Map<String, String> translations,
+    String locale, {
+    String fallbackLocale = 'en',
+  }) {
+    if (translations.isEmpty) {
+      return '';
+    }
+
+    final normalizedLocale = locale.toLowerCase();
+    final direct = translations[normalizedLocale];
+    if (direct != null && direct.isNotEmpty) {
+      return direct;
+    }
+
+    final baseLocale = _baseLocale(normalizedLocale);
+    if (baseLocale != normalizedLocale) {
+      final baseMatch = translations[baseLocale];
+      if (baseMatch != null && baseMatch.isNotEmpty) {
+        return baseMatch;
+      }
+    }
+
+    final fallback = translations[fallbackLocale];
+    if (fallback != null && fallback.isNotEmpty) {
+      return fallback;
+    }
+
+    // Return first available non-empty translation (useful when data exists
+    // only in languages other than requested/fallback).
+    for (final value in translations.values) {
+      if (value.isNotEmpty) {
+        return value;
+      }
+    }
+
+    return '';
+  }
+
+  /// Same as [resolveBest] but also returns the locale key that was used.
+  /// Returns a Map with keys 'text' and 'locale' (locale may be empty if none found).
+  static Map<String, String> resolveWithLocale(
+    Map<String, String> translations,
+    String locale, {
+    String fallbackLocale = 'en',
+  }) {
+    if (translations.isEmpty) {
+      return const <String, String>{'text': '', 'locale': ''};
+    }
+
+    final normalizedLocale = locale.toLowerCase();
+    final direct = translations[normalizedLocale];
+    if (direct != null && direct.isNotEmpty) {
+      return {'text': direct, 'locale': normalizedLocale};
+    }
+
+    final baseLocale = _baseLocale(normalizedLocale);
+    if (baseLocale != normalizedLocale) {
+      final baseMatch = translations[baseLocale];
+      if (baseMatch != null && baseMatch.isNotEmpty) {
+        return {'text': baseMatch, 'locale': baseLocale};
+      }
+    }
+
+    final fallback = translations[fallbackLocale];
+    if (fallback != null && fallback.isNotEmpty) {
+      return {'text': fallback, 'locale': fallbackLocale};
+    }
+
+    // Return first available non-empty translation and its key.
+    for (final entry in translations.entries) {
+      if (entry.value.isNotEmpty) {
+        return {'text': entry.value, 'locale': entry.key};
+      }
+    }
+
+    return const <String, String>{'text': '', 'locale': ''};
+  }
 }
