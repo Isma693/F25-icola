@@ -1,18 +1,17 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:brewmatch/core/models/beer.dart';
 
-class MockDocumentReference implements DocumentReference<Map<String, dynamic>> {
-  final String path;
-  MockDocumentReference(this.path);
-  
-  @override
-  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
-}
-
 void main() {
   group('Beer', () {
-    final mockIngredientRef = MockDocumentReference('ingredients/1');
+    late FakeFirebaseFirestore firestore;
+    late DocumentReference<Map<String, dynamic>> ingredientRef;
+
+    setUp(() {
+      firestore = FakeFirebaseFirestore();
+      ingredientRef = firestore.collection('ingredients').doc('1');
+    });
 
     test('should create a beer with all required fields', () {
       final beer = Beer(
@@ -23,7 +22,7 @@ void main() {
         bitternessLevel: 8.0,
         sweetnessLevel: 3.0,
         carbonationLevel: 4.0,
-        ingredients: [mockIngredientRef],
+        ingredients: [ingredientRef],
       );
 
       expect(beer.id, equals('1'));
@@ -49,7 +48,7 @@ void main() {
         bitternessLevel: 8.0,
         sweetnessLevel: 3.0,
         carbonationLevel: 4.0,
-        ingredients: [mockIngredientRef],
+        ingredients: [ingredientRef],
         description: {'en': 'A hoppy beer', 'fr': 'Une bière houblonnée'},
         imageUrl: 'http://example.com/image.jpg',
         onTap: true,
@@ -70,7 +69,7 @@ void main() {
         bitternessLevel: 8.0,
         sweetnessLevel: 3.0,
         carbonationLevel: 4.0,
-        ingredients: [mockIngredientRef],
+        ingredients: [ingredientRef],
         description: {'en': 'A hoppy beer', 'fr': 'Une bière houblonnée'},
         imageUrl: 'http://example.com/image.jpg',
         onTap: true,
@@ -84,7 +83,7 @@ void main() {
       expect(map['bitternessLevel'], equals(8.0));
       expect(map['sweetnessLevel'], equals(3.0));
       expect(map['carbonationLevel'], equals(4.0));
-      expect(map['ingredients'], equals([mockIngredientRef]));
+      expect(map['ingredients'], equals([ingredientRef]));
       expect(map['description'], equals({'en': 'A hoppy beer', 'fr': 'Une bière houblonnée'}));
       expect(map['imageUrl'], equals('http://example.com/image.jpg'));
       expect(map['onTap'], isTrue);
