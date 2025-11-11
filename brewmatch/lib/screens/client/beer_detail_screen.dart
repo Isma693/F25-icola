@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/state/app_state.dart';
+import '../admin/beer_form_screen.dart';
 import 'client_home_screen.dart';
 import 'sample_data.dart';
 
 /// Shows the detailed information of a beer selection.
 /// TODO: Bind to Firestore data and add pairing suggestions.
-class BeerDetailScreen extends StatelessWidget {
+// Page détail utilisée à la fois par le client et l’admin.
+class BeerDetailScreen extends StatefulWidget {
   static const routePath = '/client/beers/:beerId';
 
   const BeerDetailScreen({
@@ -19,15 +22,34 @@ class BeerDetailScreen extends StatelessWidget {
   final BeerSample? sample;
 
   @override
-  Widget build(BuildContext context) {
-    final beer = sample ??
+  State<BeerDetailScreen> createState() => _BeerDetailScreenState();
+}
+
+class _BeerDetailScreenState extends State<BeerDetailScreen> {
+  // Snapshot local de la bière (mock pour l’instant).
+  late final BeerSample _beer;
+  // Flag d’activation simulé : sera remplacé par une donnée Firestore.
+  bool _isActive = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _beer = widget.sample ??
         mockBeers.firstWhere(
-          (element) => element.id == beerId,
+          (element) => element.id == widget.beerId,
           orElse: () => mockBeers.first,
         );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final appState = AppStateScope.of(context);
+    final isAdmin = appState.isAdminUnlocked; // Permet d’afficher les outils admin.
+    final beer = _beer;
 
     return Scaffold(
       appBar: AppBar(
+        // Barre d’actions commune : retour et accès à la liste.
         title: Text(beer.name),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
@@ -46,6 +68,7 @@ class BeerDetailScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Hero principal : visuel stylisé de la bière sélectionnée.
             Hero(
               tag: 'beer-${beer.id}',
               child: _BottleHero(style: beer.style),
@@ -64,6 +87,7 @@ class BeerDetailScreen extends StatelessWidget {
               style: Theme.of(context).textTheme.bodyLarge,
             ),
             const SizedBox(height: 24),
+            // Radar simplifié des attributs gustatifs.
             _StatRow(label: 'Alcool', value: beer.alcohol),
             _StatRow(label: 'Amertume', value: beer.bitterness),
             _StatRow(label: 'Sucre', value: beer.sweetness),
@@ -74,6 +98,7 @@ class BeerDetailScreen extends StatelessWidget {
               style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
+            // Liste interactive d’ingrédients.
             Wrap(
               spacing: 8,
               runSpacing: 8,
@@ -94,20 +119,73 @@ class BeerDetailScreen extends StatelessWidget {
                   .toList(),
             ),
             const SizedBox(height: 32),
-            FilledButton.icon(
-              onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Fonction à venir : ajouter cette bière à tes favoris !'),
-                  ),
-                );
-              },
-              icon: const Icon(Icons.favorite_outline),
-              label: const Text('Je la veux au frais'),
-            ),
+            // Panneau admin uniquement visible après déverrouillage.
+            if (isAdmin) ...[
+              _AdminActionRow(
+                isActive: _isActive,
+                onEdit: () {
+                  // Accès au formulaire de modification.
+                },
+                onToggle: () { //implémenter la logique de désactivation/activation
+                  setState(() => _isActive = !_isActive);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        _isActive
+                            ? 'La bière est maintenant active dans le menu client.'
+                            : 'La bière est temporairement retirée du menu client.',
+                      ),
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(height: 24),
+            ],
           ],
         ),
       ),
+    );
+  }
+}
+
+class _AdminActionRow extends StatelessWidget {
+  const _AdminActionRow({
+    required this.isActive,
+    required this.onEdit,
+    required this.onToggle,
+  });
+
+  final bool isActive;
+  final VoidCallback onEdit;
+  final VoidCallback onToggle;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          'Outils administrateur',
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 12),
+        Wrap(
+          spacing: 12,
+          runSpacing: 12,
+          children: [
+            FilledButton.icon(
+              onPressed: onEdit,
+              icon: const Icon(Icons.edit),
+              label: const Text('Modifier'),
+            ),
+            OutlinedButton.icon(
+              onPressed: onToggle,
+              icon: Icon(isActive ? Icons.visibility_off : Icons.visibility),
+              label: Text(isActive ? 'Désactiver' : 'Activer'),
+            ),
+          ],
+        ),
+      ],
     );
   }
 }
