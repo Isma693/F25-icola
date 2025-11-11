@@ -1,11 +1,11 @@
+import 'package:brewmatch/screens/admin/login_screen.dart';
+import 'package:brewmatch/screens/admin/settings_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/state/app_state.dart';
-import '../login_screen.dart';
 import '../admin_unlock_screen.dart';
 import '../alcotest_screen.dart';
-import '../settings_screen.dart';
 import 'sample_data.dart';
 
 /// Entry point for the client experience.

@@ -1,6 +1,5 @@
+import 'package:brewmatch/core/state/app_state.dart';
 import 'package:flutter/material.dart';
-
-import '../core/state/app_state.dart';
 
 /// Temporary settings screen for language selector and mode shortcuts.
 /// TODO: Integrate full preferences UI once design is finalized.

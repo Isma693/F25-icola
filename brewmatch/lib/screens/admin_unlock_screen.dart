@@ -48,11 +48,11 @@ class _AdminUnlockScreenState extends State<AdminUnlockScreen> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     const Text(
-                      'Code secret',
+                      'Auth login',
                       style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 12),
-                    const Text('Saisis le code temporaire pour accéder aux outils de gestion.'),
+                    const Text('Saisis le code temporaire "BREW2025" pour accéder à l''interface de gestion.'),
                     const SizedBox(height: 24),
                     TextFormField(
                       controller: _passController,

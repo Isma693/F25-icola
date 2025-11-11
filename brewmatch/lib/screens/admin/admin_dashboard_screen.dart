@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/state/app_state.dart';
-import '../settings_screen.dart';
 import '../client/client_home_screen.dart';
+import 'myBeers_screen.dart';
+import 'settings_screen.dart';
 
 /// Administrator hub for managing catalog content.
 /// TODO: Replace placeholder metrics with live dashboard widgets.
@@ -26,7 +27,7 @@ class AdminDashboardScreen extends StatelessWidget {
             onPressed: () => context.push(SettingsScreen.routeName),
           ),
           IconButton(
-            tooltip: 'Verrouiller',
+            tooltip: 'Mode Client',
             icon: const Icon(Icons.lock),
             onPressed: () {
               appState.lockAdmin();
@@ -54,16 +55,16 @@ class AdminDashboardScreen extends StatelessWidget {
               runSpacing: 16,
               children: [
                 _AdminCard(
-                  icon: Icons.kitchen,
+                  icon: Icons.soup_kitchen,
                   title: 'Ingrédients',
                   description: 'Gère les matières premières et allergènes.',
                   onTap: () => context.go('${AdminDashboardScreen.routePath}/ingredients'),
                 ),
                 _AdminCard(
-                  icon: Icons.edit_square,
-                  title: 'Créer une bière',
+                  icon: Icons.local_drink,
+                  title: 'Mes Bières',
                   description: 'Ajoute ou modifie les références du catalogue.',
-                  onTap: () => context.go('${AdminDashboardScreen.routePath}/beers/form'),
+                  onTap: () => context.go('${AdminDashboardScreen.routePath}/${MyBeersScreen.routeSegment}'),
                 ),
               ],
             ),
