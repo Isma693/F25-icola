@@ -1,9 +1,9 @@
+import 'package:brewmatch/screens/admin_unlock_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../core/state/app_state.dart';
-import 'client/client_home_screen.dart';
-import 'admin_unlock_screen.dart';
+// ignore: unused_import
+import '/core/state/app_state.dart';
 
 /// Temporary login / mode selection screen.
 /// TODO: Integrate Firebase Auth and proper role handling.
@@ -45,24 +45,10 @@ class LoginScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 12),
                     const Text(
-                      'Trouve ta bière idéale ou gère ton bar en toute simplicité.',
+                      'Ta bière idéale en cliques.',
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 32),
-                    FilledButton.icon(
-                      onPressed: () {
-                        AppStateScope.of(context, listen: false).lockAdmin();
-                        context.go(ClientHomeScreen.routePath);
-                      },
-                      icon: const Icon(Icons.favorite),
-                      style: FilledButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 18),
-                        textStyle: const TextStyle(fontSize: 18),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26)),
-                      ),
-                      label: const Text('Je suis client'),
-                    ),
-                    const SizedBox(height: 16),
                     OutlinedButton.icon(
                       onPressed: () => context.push(AdminUnlockScreen.routeName),
                       icon: const Icon(Icons.lock_open),
