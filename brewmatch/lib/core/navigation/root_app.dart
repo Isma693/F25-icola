@@ -142,6 +142,11 @@ class _RootAppState extends State<RootApp> {
               transition: _slideUpTransition,
             ),
             _buildRoute(
+              path: 'ingredients/form',
+              builder: (context, state) => const IngredientFormScreen(),
+              transition: _slideUpTransition,
+            ),
+            _buildRoute(
               path: MyBeersScreen.routeSegment,
               builder: (context, state) => const MyBeersScreen(),
               transition: _slideUpTransition,

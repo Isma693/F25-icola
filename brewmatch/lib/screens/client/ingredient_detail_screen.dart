@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/state/app_state.dart';
 import 'client_home_screen.dart';
 import 'sample_data.dart';
 
@@ -33,6 +34,7 @@ class IngredientDetailScreen extends StatelessWidget {
     }
 
     final theme = Theme.of(context);
+    final isAdmin = AppStateScope.of(context).isAdminUnlocked;
 
     return Scaffold(
       appBar: AppBar(
@@ -83,6 +85,10 @@ class IngredientDetailScreen extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             ..._buildAssociatedBeers(ingredient),
+            if (isAdmin) ...[
+              const SizedBox(height: 24),
+              const _IngredientAdminActions(),
+            ],
           ],
         ),
       ),
@@ -179,6 +185,44 @@ class _InfoTile extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _IngredientAdminActions extends StatelessWidget {
+  const _IngredientAdminActions();
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          'Outils administrateur',
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 12),
+        Wrap(
+          spacing: 12,
+          runSpacing: 12,
+          children: [
+            FilledButton.icon(
+              onPressed: () {
+                // TODO: ouvrir le formulaire d’édition d’ingrédient.
+              },
+              icon: const Icon(Icons.edit),
+              label: const Text('Modifier'),
+            ),
+            OutlinedButton.icon(
+              onPressed: () {
+                // TODO: implémenter la suppression (confirmation + Firestore).
+              },
+              icon: const Icon(Icons.delete_outline),
+              label: const Text('Supprimer'),
+            ),
+          ],
+        ),
+      ],
     );
   }
 }

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../client/sample_data.dart';
-import 'beer_form_screen.dart';
+import '../../core/widgets/ingredient_list.dart';
+import '../client/ingredient_detail_screen.dart';
 
 /// Lists ingredients available to administrators.
 /// TODO: Replace mock data with Firestore-backed list and editing actions.
@@ -21,30 +21,47 @@ class IngredientListScreen extends StatelessWidget {
           onPressed: () => context.pop(),
         ),
       ),
-      body: ListView.separated(
-        padding: const EdgeInsets.all(20),
-        itemBuilder: (context, index) => ListTile(
-          leading: CircleAvatar(
-            backgroundColor: Theme.of(context)
-                .colorScheme
-                .primary
-                .withAlpha((0.15 * 255).round()),
-            child: const Icon(Icons.spa),
-          ),
-          title: Text(ingredientCatalog[index].name),
-          subtitle: Text(ingredientCatalog[index].category),
-          trailing: IconButton(
-            icon: const Icon(Icons.add_circle_outline),
-            onPressed: () => context.push(BeerFormScreen.routePath),
-          ),
-        ),
-        separatorBuilder: (_, __) => const Divider(),
-        itemCount: ingredientCatalog.length,
+      body: IngredientListView(
+        onIngredientTap: (ingredient) {
+          // Ouvre la fiche détaillée en conservant les données mock pour l’instant.
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => IngredientDetailScreen(
+                ingredientId: ingredient.id,
+                sample: ingredient,
+              ),
+            ),
+          );
+        },
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => context.push(BeerFormScreen.routePath),
-        icon: const Icon(Icons.add),
-        label: const Text('Nouvelle bière'),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => context.push(IngredientFormScreen.routePath),
+        tooltip: 'Ajouter un ingrédient',
+        child: const Icon(Icons.add),
+      ),
+    );
+  }
+}
+
+/// Placeholder d’ajout / modification d’ingrédient.
+/// TODO: implémenter un vrai formulaire (nom, catégorie, allergènes, etc.).
+class IngredientFormScreen extends StatelessWidget {
+  static const routePath = '/admin/ingredients/form';
+
+  const IngredientFormScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Créer / éditer un ingrédient'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => context.pop(),
+        ),
+      ),
+      body: const Center(
+        child: Text('Formulaire d’ingrédient à venir.'),
       ),
     );
   }
