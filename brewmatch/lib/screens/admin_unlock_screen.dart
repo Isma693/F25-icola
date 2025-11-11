@@ -48,7 +48,7 @@ class _AdminUnlockScreenState extends State<AdminUnlockScreen> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     const Text(
-                      'Auth login',
+                      '',
                       style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 12),
