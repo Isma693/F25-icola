@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/widgets/ingredient_list.dart';
-import '../client/ingredient_detail_screen.dart';
+import '../../core/widgets/ingredient_detail_screen.dart';
 
 /// Lists ingredients available to administrators.
 /// TODO: Replace mock data with Firestore-backed list and editing actions.

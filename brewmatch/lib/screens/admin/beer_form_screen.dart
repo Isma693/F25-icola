@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 /// Placeholder for the beer creation/editing form in the admin flow.
-/// TODO: Implement actual form fields, validation, and data submission.
+/// TODO: Implement functional form fields, validation, and data submission.
 class BeerFormScreen extends StatelessWidget {
   static const routePath = '/admin/beers/form';
 

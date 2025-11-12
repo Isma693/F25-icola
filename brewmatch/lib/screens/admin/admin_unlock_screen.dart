@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../core/state/app_state.dart';
-import 'admin/admin_dashboard_screen.dart';
+import '../../core/state/app_state.dart';
+import 'admin_dashboard_screen.dart';
 
 /// Screen to unlock the admin experience with a local passcode.
 /// TODO: Replace with secure authentication (Firebase Auth / backend validation).

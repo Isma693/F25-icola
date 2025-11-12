@@ -6,13 +6,13 @@ import 'package:brewmatch/core/widgets/beer_menu.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../screens/client/client_home_screen.dart';
+import '../../screens/client/home_screen.dart';
 import '../../screens/client/beer_detail_screen.dart';
-import '../../screens/client/ingredient_detail_screen.dart';
+import '../widgets/ingredient_detail_screen.dart';
 import '../../screens/admin/admin_dashboard_screen.dart';
 import '../../screens/admin/beer_form_screen.dart';
 import '../../screens/alcotest_screen.dart';
-import '../../screens/admin_unlock_screen.dart';
+import '../../screens/admin/admin_unlock_screen.dart';
 import '../state/app_state.dart';
 import '../../screens/client/sample_data.dart';
 

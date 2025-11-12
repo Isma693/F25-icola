@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/state/app_state.dart';
-import 'client_home_screen.dart';
+import 'home_screen.dart';
 import 'sample_data.dart';
 
 /// Shows the detailed information of a beer selection.
 /// TODO: Bind to Firestore data and add pairing suggestions.
-// Page détail utilisée à la fois par le client et l’admin.
+// Page ( à transformer en widget) détail utilisée à la fois par le client et l’admin.
 class BeerDetailScreen extends StatefulWidget {
   static const routePath = '/client/beers/:beerId';
 

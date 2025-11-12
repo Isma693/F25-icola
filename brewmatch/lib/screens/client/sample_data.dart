@@ -1,3 +1,5 @@
+// TODO : Remove this file when connecting to Firestore.
+
 class IngredientSample {
   const IngredientSample({
     required this.id,

@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/state/app_state.dart';
-import '../client/client_home_screen.dart';
+import '../client/home_screen.dart';
 import 'myBeers_screen.dart';
 import 'settings_screen.dart';
 
 /// Administrator hub for managing catalog content.
-/// TODO: Replace placeholder metrics with live dashboard widgets.
+/// TODO: Add live dashboard metrics widgets. Contrast the UX to differentiate the client side from the user side. 
 class AdminDashboardScreen extends StatelessWidget {
   static const routePath = '/admin';
 

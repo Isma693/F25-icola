@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/widgets/beer_menu.dart';
-import '../client/client_home_screen.dart';
+import '../client/home_screen.dart';
 import 'beer_form_screen.dart';
 
 /// Écran temporaire qui encapsule le catalogue de bières pour l’espace admin.

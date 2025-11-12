@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../core/state/app_state.dart';
-import 'client_home_screen.dart';
-import 'sample_data.dart';
+import '../state/app_state.dart';
+import '../../screens/client/home_screen.dart';
+import '../../screens/client/sample_data.dart';
 
 /// Detailed view for an ingredient shown in beer descriptions.
 /// TODO: Hook into real ingredient entities from Firestore.

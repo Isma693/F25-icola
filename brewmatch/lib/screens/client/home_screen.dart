@@ -4,12 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/state/app_state.dart';
-import '../admin_unlock_screen.dart';
+import '../admin/admin_unlock_screen.dart';
 import '../alcotest_screen.dart';
 import 'sample_data.dart';
 
 /// Entry point for the client experience.
-/// TODO: Bind sliders and results to real recommendation engine.
+/// TODO: Link the sliders and results to the actual recommendation engine. Create and encapsulate them in the necessary widgets.
 class ClientHomeScreen extends StatefulWidget {
   static const routePath = '/client';
 

@@ -1,4 +1,4 @@
-import 'package:brewmatch/screens/admin_unlock_screen.dart';
+import 'package:brewmatch/screens/admin/admin_unlock_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
