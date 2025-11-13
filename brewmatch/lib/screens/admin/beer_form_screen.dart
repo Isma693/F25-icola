@@ -2,6 +2,8 @@ import 'package:brewmatch/screens/admin/ingredient_form_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/state/app_state.dart';
+
 /// Placeholder for the beer creation/editing form in the admin flow.
 /// TODO: Implement functional form fields, validation, and data submission.
 class BeerFormScreen extends StatelessWidget {
@@ -11,6 +13,7 @@ class BeerFormScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    AppStateScope.of(context, listen: false).refreshAdminSession();
     return Scaffold(
       appBar: AppBar(
         title: const Text('Créer / éditer une bière'),

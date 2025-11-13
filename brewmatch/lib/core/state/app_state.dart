@@ -1,20 +1,31 @@
+import 'dart:async';
+
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 /// Defines the high-level mode the app operates in.
 enum AppMode { client, admin }
 
+/// Result returned when attempting to unlock the admin mode.
+enum AdminUnlockResult { success, invalidCredentials, noAuthenticatedUser, networkError }
+
 /// Application state shared across navigation layers.
 ///
-/// - Handles admin lock/unlock logic (later wired to real auth).
+/// - Handles admin lock/unlock logic backed by Firebase Auth reauthentication.
 /// - Stores UI preferences such as the active locale.
 class AppState extends ChangeNotifier {
-  AppState();
+  AppState({
+    FirebaseAuth? firebaseAuth,
+    this.adminAutoLockDelay = const Duration(minutes: 5),
+  }) : _auth = firebaseAuth ?? FirebaseAuth.instance;
 
-  static const _adminPasscode = 'BREW2025'; // TODO: Replace with secure backend check.
+  final FirebaseAuth _auth;
+  final Duration adminAutoLockDelay;
 
   AppMode _mode = AppMode.client;
   bool _isAdminUnlocked = false;
   Locale _locale = const Locale('en');
+  Timer? _adminAutoLockTimer;
 
   AppMode get mode => _mode;
   bool get isAdminUnlocked => _isAdminUnlocked;
@@ -31,23 +42,65 @@ class AppState extends ChangeNotifier {
   void lockAdmin() {
     _mode = AppMode.client;
     _isAdminUnlocked = false;
+    _cancelAutoLockTimer();
     notifyListeners();
   }
 
-  bool unlockAdmin(String passcode) {
-    final successful = passcode.trim() == _adminPasscode;
-    if (successful) {
+  Future<AdminUnlockResult> unlockAdmin(String password) async {
+    final user = _auth.currentUser;
+    final email = user?.email;
+    if (user == null || email == null) {
+      return AdminUnlockResult.noAuthenticatedUser;
+    }
+
+    try {
+      final credential = EmailAuthProvider.credential(email: email, password: password);
+      await user.reauthenticateWithCredential(credential);
+
       _isAdminUnlocked = true;
       _mode = AppMode.admin;
+      _startAutoLockTimer();
       notifyListeners();
+      return AdminUnlockResult.success;
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'wrong-password' || e.code == 'invalid-credential') {
+        return AdminUnlockResult.invalidCredentials;
+      }
+      return AdminUnlockResult.networkError;
+    } catch (_) {
+      return AdminUnlockResult.networkError;
     }
-    return successful;
   }
 
   void setLocale(Locale locale) {
     if (_locale == locale) return;
     _locale = locale;
     notifyListeners();
+  }
+
+  /// Keeps the admin session alive while activity is detected.
+  void refreshAdminSession() {
+    if (!_isAdminUnlocked) return;
+    _startAutoLockTimer();
+  }
+
+  void _startAutoLockTimer() {
+    _adminAutoLockTimer?.cancel();
+    if (adminAutoLockDelay.isNegative || adminAutoLockDelay == Duration.zero) {
+      return;
+    }
+    _adminAutoLockTimer = Timer(adminAutoLockDelay, lockAdmin);
+  }
+
+  void _cancelAutoLockTimer() {
+    _adminAutoLockTimer?.cancel();
+    _adminAutoLockTimer = null;
+  }
+
+  @override
+  void dispose() {
+    _cancelAutoLockTimer();
+    super.dispose();
   }
 }
 

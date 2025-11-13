@@ -1,16 +1,34 @@
 import 'package:brewmatch/screens/admin/admin_unlock_screen.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-// ignore: unused_import
-import '/core/state/app_state.dart';
+import '../../core/services/auth_service.dart';
+import '../client/home_screen.dart';
 
-/// Temporary login / mode selection screen.
-/// TODO: Integrate Firebase Auth and proper role handling.
-class LoginScreen extends StatelessWidget {
+/// Authentication gate that keeps a persistent Firebase session alive.
+class LoginScreen extends StatefulWidget {
   static const routeName = '/login';
 
   const LoginScreen({super.key});
+
+  @override
+  State<LoginScreen> createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> {
+  final _formKey = GlobalKey<FormState>();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  bool _isSubmitting = false;
+  String? _error;
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -49,6 +67,15 @@ class LoginScreen extends StatelessWidget {
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 32),
+                    _buildLoginForm(theme),
+                    if (_error != null) ...[
+                      const SizedBox(height: 12),
+                      Text(
+                        _error!,
+                        style: const TextStyle(color: Colors.red),
+                      ),
+                    ],
+                    const SizedBox(height: 32),
                     OutlinedButton.icon(
                       onPressed: () => context.push(AdminUnlockScreen.routeName),
                       icon: const Icon(Icons.lock_open),
@@ -68,5 +95,96 @@ class LoginScreen extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  Widget _buildLoginForm(ThemeData theme) {
+    return Form(
+      key: _formKey,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          TextFormField(
+            controller: _emailController,
+            keyboardType: TextInputType.emailAddress,
+            decoration: const InputDecoration(
+              labelText: 'E-mail administrateur',
+              prefixIcon: Icon(Icons.mail_outline),
+            ),
+            validator: (value) {
+              if (value == null || value.trim().isEmpty) {
+                return 'Merci d’entrer un e-mail valide.';
+              }
+              return null;
+            },
+          ),
+          const SizedBox(height: 12),
+          TextFormField(
+            controller: _passwordController,
+            obscureText: true,
+            decoration: const InputDecoration(
+              labelText: 'Mot de passe',
+              prefixIcon: Icon(Icons.password),
+            ),
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'Mot de passe requis.';
+              }
+              if (value.length < 6) {
+                return 'Au moins 6 caractères.';
+              }
+              return null;
+            },
+          ),
+          const SizedBox(height: 20),
+          FilledButton.icon(
+            onPressed: _isSubmitting ? null : _handleSignIn,
+            icon: _isSubmitting
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.login),
+            label: Text(_isSubmitting ? 'Connexion…' : 'Se connecter'),
+            style: FilledButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              textStyle: const TextStyle(fontSize: 17, fontWeight: FontWeight.w600),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _handleSignIn() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() {
+      _isSubmitting = true;
+      _error = null;
+    });
+
+    try {
+      await AuthService.instance.signIn(
+        _emailController.text,
+        _passwordController.text,
+      );
+      if (!mounted) return;
+      context.go(ClientHomeScreen.routePath);
+    } on FirebaseAuthException catch (e) {
+      setState(() {
+        _error = e.message ?? 'Impossible de se connecter.';
+      });
+    } catch (e) {
+      setState(() {
+        _error = 'Erreur inattendue: $e';
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSubmitting = false;
+        });
+      }
+    }
   }
 }
