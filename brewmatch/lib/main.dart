@@ -1,4 +1,4 @@
-// ignore_for_file: avoid_print
+// ignore_for_file: avoid_print, use_build_context_synchronously
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
@@ -9,6 +9,7 @@ import 'core/models/ingredient.dart';
 import 'core/services/localized_text.dart';
 import 'core/services/auth_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'core/services/firestore_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -57,6 +58,7 @@ class _DebugHomeState extends State<DebugHome> {
   final _beerImage = TextEditingController();
   final _beerDescEn = TextEditingController();
   List<DocumentReference<Map<String, dynamic>>> _selectedIngredients = [];
+  final FirestoreService _fs = FirestoreService();
 
   String? _selectedBeerId;
   Map<String, dynamic>? _selectedBeerData;
@@ -109,15 +111,14 @@ class _DebugHomeState extends State<DebugHome> {
 
   Future<void> _addIngredient() async {
     try {
-      final firestore = FirebaseFirestore.instance;
       final data = {
         'name': {'en': _ingNameEn.text, 'fr': _ingNameFr.text},
         'category': _ingCategory.value,
         'isAllergen': _ingAllergen,
         'description': {'en': _ingDescEn.text},
       };
-      final ref = await firestore.collection('ingredients').add(data);
-      _log('Ingredient added: ${ref.path}');
+      final ref = await _fs.addDocument('ingredients', data);
+      _log('Ingredient added: ${ref?.path}');
       _clearIngredientForm();
     } catch (e) {
       _log('Error adding ingredient: $e');
@@ -133,9 +134,7 @@ class _DebugHomeState extends State<DebugHome> {
   }
 
   Future<void> _pickIngredientsDialog() async {
-    final firestore = FirebaseFirestore.instance;
-    final snapshot = await firestore.collection('ingredients').get();
-    final docs = snapshot.docs;
+    final docs = await _fs.getCollectionSnapshots('ingredients');
     final Map<String, bool> selected = {};
     for (final doc in docs) {
       selected[doc.id] = _selectedIngredients.any(
@@ -199,7 +198,7 @@ class _DebugHomeState extends State<DebugHome> {
 
   Future<void> _addBeer() async {
     try {
-      final firestore = FirebaseFirestore.instance;
+      // use FirestoreService to add beer
       final alcohol = double.tryParse(_beerAlcohol.text) ?? 0.0;
       final bitterness = double.tryParse(_beerBitterness.text) ?? 0.0;
       final sweetness = double.tryParse(_beerSweetness.text) ?? 0.0;
@@ -218,8 +217,8 @@ class _DebugHomeState extends State<DebugHome> {
         'onTap': false,
       };
 
-      final ref = await firestore.collection('beers').add(data);
-      _log('Beer added: ${ref.path}');
+      final ref = await _fs.addDocument('beers', data);
+      _log('Beer added: ${ref?.path}');
       _clearBeerForm();
     } catch (e) {
       _log('Error adding beer: $e');
@@ -245,10 +244,16 @@ class _DebugHomeState extends State<DebugHome> {
       _selectedBeerData = null;
     });
     if (id == null) return;
-    final firestore = FirebaseFirestore.instance;
-    final snap = await firestore.collection('beers').doc(id).get();
+    final docs = await _fs.getCollectionSnapshots('beers');
+    QueryDocumentSnapshot<Map<String, dynamic>>? found;
+    for (final d in docs) {
+      if (d.id == id) {
+        found = d;
+        break;
+      }
+    }
     setState(() {
-      _selectedBeerData = snap.data();
+      _selectedBeerData = found?.data();
     });
   }
 
@@ -489,28 +494,16 @@ class _DebugHomeState extends State<DebugHome> {
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8),
-              StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-                stream: FirebaseFirestore.instance
-                    .collection('beers')
-                    .snapshots(),
+              FutureBuilder<List<Beer>>(
+                future: _fs.getCollection<Beer>('beers', (map, id) => Beer.fromMap(map, id: id)),
                 builder: (context, snapshot) {
-                  if (!snapshot.hasData)
-                    return const CircularProgressIndicator();
-                  final docs = snapshot.data!.docs;
+                  if (!snapshot.hasData) return const CircularProgressIndicator();
+                  final beers = snapshot.data!;
                   return DropdownButton<String>(
                     value: _selectedBeerId,
                     hint: const Text('Select a beer'),
                     isExpanded: true,
-                    items: docs.map((d) {
-                      final nameMap = LocalizedText.parse(d.data()['name']);
-                      final label =
-                          nameMap['en'] ??
-                          nameMap.values.firstWhere(
-                            (_) => true,
-                            orElse: () => d.id,
-                          );
-                      return DropdownMenuItem(value: d.id, child: Text(label));
-                    }).toList(),
+                    items: beers.map((b) => DropdownMenuItem(value: b.id, child: Text(b.localizedName('en')))).toList(),
                     onChanged: (v) => _selectBeer(v),
                   );
                 },
