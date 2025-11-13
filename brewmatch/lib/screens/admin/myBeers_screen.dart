@@ -4,8 +4,6 @@ import 'package:go_router/go_router.dart';
 import '../../core/models/beer.dart';
 import '../../core/services/admin_catalog_repository.dart';
 import '../../core/state/app_state.dart';
-import '../../core/widgets/beer_menu.dart';
-import '../client/home_screen.dart';
 import 'beer_form_screen.dart';
 
 /// Liste des bières côté admin avec accès rapide à l’édition.

@@ -5,8 +5,6 @@ import '../../core/models/ingredient.dart';
 import '../../core/services/admin_catalog_repository.dart';
 import 'widgets/ingredient_form.dart';
 import '../../core/state/app_state.dart';
-import '../../core/widgets/ingredient_detail_screen.dart';
-import '../../core/widgets/ingredient_list.dart';
 
 /// Lists ingredients available to administrators.
 class IngredientListScreen extends StatefulWidget {
