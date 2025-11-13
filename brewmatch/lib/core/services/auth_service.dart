@@ -5,9 +5,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 /// Service d'authentification basé sur Firebase Auth.
 ///
 /// Fournit :
-/// - Future UserCredential signIn(String email, String password)
-/// - Future UserCredential signUp(String email, String password)
-/// - Future void signOut()
+/// - Future<UserCredential> signIn(String email, String password)
+/// - Future<UserCredential> signUp(String email, String password)
+/// - Future<void> signOut()
 /// - User? get currentUser
 ///
 /// Les erreurs courantes de FirebaseAuth sont capturées et loggées de façon lisible.
