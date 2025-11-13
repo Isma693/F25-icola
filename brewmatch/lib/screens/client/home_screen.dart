@@ -3,6 +3,7 @@ import 'package:brewmatch/screens/admin/settings_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/services/auth_service.dart';
 import '../../core/state/app_state.dart';
 import '../admin/admin_unlock_screen.dart';
 import '../alcotest_screen.dart';
@@ -42,7 +43,7 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
             onPressed: () => context.push(SettingsScreen.routeName),
           ),
           PopupMenuButton<String>(
-            onSelected: (value) {
+            onSelected: (value) async {
               switch (value) {
                 case 'alcotest':
                   context.push(AlcotestScreen.routeName);
@@ -52,6 +53,16 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
                   break;
                 case 'logout':
                   AppStateScope.of(context, listen: false).lockAdmin();
+                  try {
+                    await AuthService.instance.signOut();
+                  } catch (e) {
+                    if (!mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Impossible de se déconnecter: $e')),
+                    );
+                    return;
+                  }
+                  if (!mounted) return;
                   context.go(LoginScreen.routeName);
                   break;
                 default:

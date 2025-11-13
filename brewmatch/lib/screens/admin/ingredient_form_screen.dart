@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../core/widgets/ingredient_list.dart';
+import '../../core/state/app_state.dart';
 import '../../core/widgets/ingredient_detail_screen.dart';
+import '../../core/widgets/ingredient_list.dart';
 
 /// Lists ingredients available to administrators.
 /// TODO: Replace mock data with Firestore-backed list and editing actions.
@@ -13,6 +14,7 @@ class IngredientListScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    AppStateScope.of(context, listen: false).refreshAdminSession();
     return Scaffold(
       appBar: AppBar(
         title: const Text('Ingrédients'),
@@ -52,6 +54,7 @@ class IngredientFormScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    AppStateScope.of(context, listen: false).refreshAdminSession();
     return Scaffold(
       appBar: AppBar(
         title: const Text('Créer / éditer un ingrédient'),

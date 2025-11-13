@@ -4,8 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/state/app_state.dart';
 import 'admin_dashboard_screen.dart';
 
-/// Screen to unlock the admin experience with a local passcode.
-/// TODO: Replace with secure authentication (Firebase Auth / backend validation).
+/// Screen to unlock the admin experience by reentering the Firebase Auth password.
 class AdminUnlockScreen extends StatefulWidget {
   static const routeName = '/admin/unlock';
 
@@ -48,22 +47,22 @@ class _AdminUnlockScreenState extends State<AdminUnlockScreen> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     const Text(
-                      '',
+                      'Mode sécurisé',
                       style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 12),
-                    const Text('Saisis le code temporaire "BREW2025" pour accéder à l''interface de gestion.'),
+                    const Text('Ressaisis le mot de passe du compte administrateur pour protéger l’accès.'),
                     const SizedBox(height: 24),
                     TextFormField(
                       controller: _passController,
                       decoration: const InputDecoration(
-                        labelText: 'Passcode admin',
+                        labelText: 'Mot de passe du compte',
                         border: OutlineInputBorder(),
                       ),
                       obscureText: true,
                       validator: (value) {
                         if (value == null || value.trim().isEmpty) {
-                          return 'Merci d’entrer le code.';
+                          return 'Merci d’entrer ton mot de passe.';
                         }
                         return null;
                       },
@@ -107,18 +106,32 @@ class _AdminUnlockScreenState extends State<AdminUnlockScreen> {
       _error = null;
     });
 
-    await Future<void>.delayed(const Duration(milliseconds: 450));
-    final success = appState.unlockAdmin(_passController.text);
+    final result = await appState.unlockAdmin(_passController.text);
 
     if (!mounted) return;
 
-    if (success) {
-      router.go(AdminDashboardScreen.routePath);
-    } else {
-      setState(() {
-        _error = 'Code incorrect.';
-        _isSubmitting = false;
-      });
+    switch (result) {
+      case AdminUnlockResult.success:
+        router.go(AdminDashboardScreen.routePath);
+        break;
+      case AdminUnlockResult.invalidCredentials:
+        setState(() {
+          _error = 'Mot de passe incorrect.';
+          _isSubmitting = false;
+        });
+        break;
+      case AdminUnlockResult.noAuthenticatedUser:
+        setState(() {
+          _error = 'Aucun utilisateur administrateur n’est connecté.';
+          _isSubmitting = false;
+        });
+        break;
+      case AdminUnlockResult.networkError:
+        setState(() {
+          _error = 'Impossible de vérifier le mot de passe. Vérifie la connexion réseau.';
+          _isSubmitting = false;
+        });
+        break;
     }
   }
 }

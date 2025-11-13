@@ -11,6 +11,9 @@ class SettingsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final appState = AppStateScope.of(context);
+    if (appState.isAdminUnlocked) {
+      appState.refreshAdminSession();
+    }
     final locale = appState.locale;
 
     return Scaffold(

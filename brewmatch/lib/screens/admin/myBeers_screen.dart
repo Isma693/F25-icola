@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/state/app_state.dart';
 import '../../core/widgets/beer_menu.dart';
 import '../client/home_screen.dart';
 import 'beer_form_screen.dart';
@@ -14,6 +15,7 @@ class MyBeersScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    AppStateScope.of(context, listen: false).refreshAdminSession();
     return Scaffold(
       appBar: AppBar(
         title: const Text('Mes Bières'),
