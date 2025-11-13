@@ -5,15 +5,15 @@ import 'firebase_options.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'core/models/ingredient.dart';
-import 'core/models/beer.dart';
+// ...existing code... (beer model import removed - unused in this debug runner)
 import 'core/services/localized_text.dart';
+import 'core/services/auth_service.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'core/services/firestore_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   runApp(const MyApp());
 }
 
@@ -22,10 +22,7 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'BrewMatch Admin',
-      home: const DebugHome(),
-    );
+    return MaterialApp(title: 'BrewMatch Admin', home: const DebugHome());
   }
 }
 
@@ -38,6 +35,10 @@ class DebugHome extends StatefulWidget {
 
 class _DebugHomeState extends State<DebugHome> {
   final List<String> _logs = [];
+
+  // Auth test controllers
+  final _authEmail = TextEditingController();
+  final _authPassword = TextEditingController();
 
   // Ingredient form controllers
   final _ingNameEn = TextEditingController();
@@ -62,24 +63,59 @@ class _DebugHomeState extends State<DebugHome> {
   String? _selectedBeerId;
   Map<String, dynamic>? _selectedBeerData;
 
+  @override
+  void initState() {
+    super.initState();
+    // Listen to auth state changes for quick feedback
+    FirebaseAuth.instance.authStateChanges().listen((user) {
+      _log('Auth state changed: ${user?.uid ?? 'signed out'}');
+    });
+  }
+
   void _log(String message) {
     setState(() {
       _logs.insert(0, '${DateTime.now().toIso8601String()}  $message');
     });
   }
 
+  Future<void> _trySignIn() async {
+    try {
+      final email = _authEmail.text;
+      final pass = _authPassword.text;
+      final cred = await AuthService.instance.signIn(email, pass);
+      _log('Signed in: ${cred.user?.email} (uid: ${cred.user?.uid})');
+    } catch (e) {
+      _log('SignIn error: $e');
+    }
+  }
+
+  Future<void> _trySignUp() async {
+    try {
+      final email = _authEmail.text;
+      final pass = _authPassword.text;
+      final cred = await AuthService.instance.signUp(email, pass);
+      _log('Signed up: ${cred.user?.email} (uid: ${cred.user?.uid})');
+    } catch (e) {
+      _log('SignUp error: $e');
+    }
+  }
+
+  Future<void> _trySignOut() async {
+    try {
+      await AuthService.instance.signOut();
+      _log('Signed out');
+    } catch (e) {
+      _log('SignOut error: $e');
+    }
+  }
+
   Future<void> _addIngredient() async {
     try {
       final data = {
-        'name': {
-          'en': _ingNameEn.text,
-          'fr': _ingNameFr.text,
-        },
+        'name': {'en': _ingNameEn.text, 'fr': _ingNameFr.text},
         'category': _ingCategory.value,
         'isAllergen': _ingAllergen,
-        'description': {
-          'en': _ingDescEn.text,
-        },
+        'description': {'en': _ingDescEn.text},
       };
       final ref = await _fs.addDocument('ingredients', data);
       _log('Ingredient added: ${ref?.path}');
@@ -101,7 +137,9 @@ class _DebugHomeState extends State<DebugHome> {
     final docs = await _fs.getCollectionSnapshots('ingredients');
     final Map<String, bool> selected = {};
     for (final doc in docs) {
-      selected[doc.id] = _selectedIngredients.any((r) => r.path == doc.reference.path);
+      selected[doc.id] = _selectedIngredients.any(
+        (r) => r.path == doc.reference.path,
+      );
     }
 
     await showDialog<void>(
@@ -115,23 +153,38 @@ class _DebugHomeState extends State<DebugHome> {
               shrinkWrap: true,
               children: docs.map((doc) {
                 final nameMap = LocalizedText.parse(doc.data()['name']);
-                final label = nameMap['en'] ?? nameMap.values.firstWhere((_) => true, orElse: () => doc.id);
+                final label =
+                    nameMap['en'] ??
+                    nameMap.values.firstWhere(
+                      (_) => true,
+                      orElse: () => doc.id,
+                    );
                 return CheckboxListTile(
                   value: selected[doc.id] ?? false,
                   title: Text(label),
-                  onChanged: (v) => setState(() => selected[doc.id] = v ?? false),
+                  onChanged: (v) =>
+                      setState(() => selected[doc.id] = v ?? false),
                 );
               }).toList(),
             ),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Cancel')),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
             ElevatedButton(
               onPressed: () {
-                _selectedIngredients = docs.where((d) => selected[d.id] == true).map((d) => d.reference.withConverter<Map<String, dynamic>>(
-                  fromFirestore: (snap, _) => snap.data() ?? <String, dynamic>{},
-                  toFirestore: (value, _) => value,
-                )).toList();
+                _selectedIngredients = docs
+                    .where((d) => selected[d.id] == true)
+                    .map(
+                      (d) => d.reference.withConverter<Map<String, dynamic>>(
+                        fromFirestore: (snap, _) =>
+                            snap.data() ?? <String, dynamic>{},
+                        toFirestore: (value, _) => value,
+                      ),
+                    )
+                    .toList();
                 Navigator.of(context).pop();
                 setState(() {});
               },
@@ -152,18 +205,13 @@ class _DebugHomeState extends State<DebugHome> {
       final carbonation = double.tryParse(_beerCarbonation.text) ?? 0.0;
 
       final data = {
-        'name': {
-          'en': _beerNameEn.text,
-          'fr': _beerNameFr.text,
-        },
+        'name': {'en': _beerNameEn.text, 'fr': _beerNameFr.text},
         'style': _beerStyle.text,
         'alcoholLevel': alcohol,
         'bitternessLevel': bitterness,
         'sweetnessLevel': sweetness,
         'carbonationLevel': carbonation,
-        'description': {
-          'en': _beerDescEn.text,
-        },
+        'description': {'en': _beerDescEn.text},
         'ingredients': _selectedIngredients.map((r) => r).toList(),
         'imageUrl': _beerImage.text.isEmpty ? null : _beerImage.text,
         'onTap': false,
@@ -211,6 +259,8 @@ class _DebugHomeState extends State<DebugHome> {
 
   @override
   void dispose() {
+    _authEmail.dispose();
+    _authPassword.dispose();
     _ingNameEn.dispose();
     _ingNameFr.dispose();
     _ingDescEn.dispose();
@@ -236,61 +286,213 @@ class _DebugHomeState extends State<DebugHome> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('Add Ingredient', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              const Text(
+                'Auth (test)',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
               const SizedBox(height: 8),
-              Row(children: [
-                Expanded(child: TextField(controller: _ingNameEn, decoration: const InputDecoration(labelText: 'Name (en)'))),
-                const SizedBox(width: 8),
-                Expanded(child: TextField(controller: _ingNameFr, decoration: const InputDecoration(labelText: 'Name (fr)'))),
-              ]),
-              TextField(controller: _ingDescEn, decoration: const InputDecoration(labelText: 'Description (en)')),
-              Row(children: [
-                const Text('Category:'),
-                const SizedBox(width: 8),
-                DropdownButton<IngredientCategory>(
-                  value: _ingCategory,
-                  onChanged: (v) => setState(() => _ingCategory = v ?? IngredientCategory.hop),
-                  items: IngredientCategory.values.map((c) => DropdownMenuItem(value: c, child: Text(c.value))).toList(),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _authEmail,
+                      decoration: const InputDecoration(labelText: 'Email'),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: TextField(
+                      controller: _authPassword,
+                      decoration: const InputDecoration(labelText: 'Password'),
+                      obscureText: true,
+                    ),
+                  ),
+                ],
+              ),
+              Row(
+                children: [
+                  ElevatedButton(
+                    onPressed: _trySignIn,
+                    child: const Text('Sign In'),
+                  ),
+                  const SizedBox(width: 8),
+                  ElevatedButton(
+                    onPressed: _trySignUp,
+                    child: const Text('Sign Up'),
+                  ),
+                  const SizedBox(width: 8),
+                  ElevatedButton(
+                    onPressed: _trySignOut,
+                    child: const Text('Sign Out'),
+                  ),
+                ],
+              ),
+              const Divider(height: 24),
+              const Text(
+                'Add Ingredient',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _ingNameEn,
+                      decoration: const InputDecoration(labelText: 'Name (en)'),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: TextField(
+                      controller: _ingNameFr,
+                      decoration: const InputDecoration(labelText: 'Name (fr)'),
+                    ),
+                  ),
+                ],
+              ),
+              TextField(
+                controller: _ingDescEn,
+                decoration: const InputDecoration(
+                  labelText: 'Description (en)',
                 ),
-                const SizedBox(width: 16),
-                Checkbox(value: _ingAllergen, onChanged: (v) => setState(() => _ingAllergen = v ?? false)),
-                const Text('Allergen')
-              ]),
-              Row(children: [
-                ElevatedButton(onPressed: _addIngredient, child: const Text('Add Ingredient')),
-              ]),
+              ),
+              Row(
+                children: [
+                  const Text('Category:'),
+                  const SizedBox(width: 8),
+                  DropdownButton<IngredientCategory>(
+                    value: _ingCategory,
+                    onChanged: (v) => setState(
+                      () => _ingCategory = v ?? IngredientCategory.hop,
+                    ),
+                    items: IngredientCategory.values
+                        .map(
+                          (c) =>
+                              DropdownMenuItem(value: c, child: Text(c.value)),
+                        )
+                        .toList(),
+                  ),
+                  const SizedBox(width: 16),
+                  Checkbox(
+                    value: _ingAllergen,
+                    onChanged: (v) => setState(() => _ingAllergen = v ?? false),
+                  ),
+                  const Text('Allergen'),
+                ],
+              ),
+              Row(
+                children: [
+                  ElevatedButton(
+                    onPressed: _addIngredient,
+                    child: const Text('Add Ingredient'),
+                  ),
+                ],
+              ),
               const Divider(height: 24),
 
-              const Text('Add Beer', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              const Text(
+                'Add Beer',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
               const SizedBox(height: 8),
-              Row(children: [
-                Expanded(child: TextField(controller: _beerNameEn, decoration: const InputDecoration(labelText: 'Name (en)'))),
-                const SizedBox(width: 8),
-                Expanded(child: TextField(controller: _beerNameFr, decoration: const InputDecoration(labelText: 'Name (fr)'))),
-              ]),
-              TextField(controller: _beerStyle, decoration: const InputDecoration(labelText: 'Style')),
-              Row(children: [
-                Expanded(child: TextField(controller: _beerAlcohol, decoration: const InputDecoration(labelText: 'Alcohol level'), keyboardType: TextInputType.number)),
-                const SizedBox(width: 8),
-                Expanded(child: TextField(controller: _beerBitterness, decoration: const InputDecoration(labelText: 'Bitterness'), keyboardType: TextInputType.number)),
-              ]),
-              Row(children: [
-                Expanded(child: TextField(controller: _beerSweetness, decoration: const InputDecoration(labelText: 'Sweetness'), keyboardType: TextInputType.number)),
-                const SizedBox(width: 8),
-                Expanded(child: TextField(controller: _beerCarbonation, decoration: const InputDecoration(labelText: 'Carbonation'), keyboardType: TextInputType.number)),
-              ]),
-              TextField(controller: _beerImage, decoration: const InputDecoration(labelText: 'Image URL')),
-              TextField(controller: _beerDescEn, decoration: const InputDecoration(labelText: 'Description (en)')),
-              Row(children: [
-                ElevatedButton(onPressed: _pickIngredientsDialog, child: const Text('Select Ingredients')),
-                const SizedBox(width: 12),
-                Expanded(child: Text('${_selectedIngredients.length} selected')),
-                const SizedBox(width: 12),
-                ElevatedButton(onPressed: _addBeer, child: const Text('Add Beer')),
-              ]),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _beerNameEn,
+                      decoration: const InputDecoration(labelText: 'Name (en)'),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: TextField(
+                      controller: _beerNameFr,
+                      decoration: const InputDecoration(labelText: 'Name (fr)'),
+                    ),
+                  ),
+                ],
+              ),
+              TextField(
+                controller: _beerStyle,
+                decoration: const InputDecoration(labelText: 'Style'),
+              ),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _beerAlcohol,
+                      decoration: const InputDecoration(
+                        labelText: 'Alcohol level',
+                      ),
+                      keyboardType: TextInputType.number,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: TextField(
+                      controller: _beerBitterness,
+                      decoration: const InputDecoration(
+                        labelText: 'Bitterness',
+                      ),
+                      keyboardType: TextInputType.number,
+                    ),
+                  ),
+                ],
+              ),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _beerSweetness,
+                      decoration: const InputDecoration(labelText: 'Sweetness'),
+                      keyboardType: TextInputType.number,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: TextField(
+                      controller: _beerCarbonation,
+                      decoration: const InputDecoration(
+                        labelText: 'Carbonation',
+                      ),
+                      keyboardType: TextInputType.number,
+                    ),
+                  ),
+                ],
+              ),
+              TextField(
+                controller: _beerImage,
+                decoration: const InputDecoration(labelText: 'Image URL'),
+              ),
+              TextField(
+                controller: _beerDescEn,
+                decoration: const InputDecoration(
+                  labelText: 'Description (en)',
+                ),
+              ),
+              Row(
+                children: [
+                  ElevatedButton(
+                    onPressed: _pickIngredientsDialog,
+                    child: const Text('Select Ingredients'),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text('${_selectedIngredients.length} selected'),
+                  ),
+                  const SizedBox(width: 12),
+                  ElevatedButton(
+                    onPressed: _addBeer,
+                    child: const Text('Add Beer'),
+                  ),
+                ],
+              ),
               const Divider(height: 24),
 
-              const Text('Beers in DB', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              const Text(
+                'Beers in DB',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
               const SizedBox(height: 8),
               FutureBuilder<List<Beer>>(
                 future: _fs.getCollection<Beer>('beers', (map, id) => Beer.fromMap(map, id: id)),
@@ -309,14 +511,25 @@ class _DebugHomeState extends State<DebugHome> {
 
               const SizedBox(height: 12),
               if (_selectedBeerData != null) ...[
-                const Text('Selected beer', style: TextStyle(fontWeight: FontWeight.bold)),
+                const Text(
+                  'Selected beer',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
                 const SizedBox(height: 8),
-                Text('Name: ${LocalizedText.resolveBest(LocalizedText.parse(_selectedBeerData!['name']), 'en')}'),
+                Text(
+                  'Name: ${LocalizedText.resolveBest(LocalizedText.parse(_selectedBeerData!['name']), 'en')}',
+                ),
                 Text('Style: ${_selectedBeerData!['style'] ?? ''}'),
                 Text('Alcohol: ${_selectedBeerData!['alcoholLevel'] ?? ''}'),
-                Text('Bitterness: ${_selectedBeerData!['bitternessLevel'] ?? ''}'),
-                Text('Sweetness: ${_selectedBeerData!['sweetnessLevel'] ?? ''}'),
-                Text('Carbonation: ${_selectedBeerData!['carbonationLevel'] ?? ''}'),
+                Text(
+                  'Bitterness: ${_selectedBeerData!['bitternessLevel'] ?? ''}',
+                ),
+                Text(
+                  'Sweetness: ${_selectedBeerData!['sweetnessLevel'] ?? ''}',
+                ),
+                Text(
+                  'Carbonation: ${_selectedBeerData!['carbonationLevel'] ?? ''}',
+                ),
               ],
 
               const Divider(height: 24),
@@ -324,9 +537,15 @@ class _DebugHomeState extends State<DebugHome> {
               const SizedBox(height: 8),
               Container(
                 height: 200,
-                decoration: BoxDecoration(border: Border.all(color: Colors.grey.shade300), borderRadius: BorderRadius.circular(6)),
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.grey.shade300),
+                  borderRadius: BorderRadius.circular(6),
+                ),
                 padding: const EdgeInsets.all(8),
-                child: ListView.builder(itemCount: _logs.length, itemBuilder: (context, index) => Text(_logs[index])),
+                child: ListView.builder(
+                  itemCount: _logs.length,
+                  itemBuilder: (context, index) => Text(_logs[index]),
+                ),
               ),
             ],
           ),
