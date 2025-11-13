@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/models/beer.dart';
 import 'widgets/beer_form.dart';
 
 /// Placeholder for the beer creation/editing form in the admin flow.
@@ -8,7 +9,9 @@ import 'widgets/beer_form.dart';
 class BeerFormScreen extends StatelessWidget {
   static const routePath = '/admin/beers/form';
 
-  const BeerFormScreen({super.key});
+  const BeerFormScreen({super.key, this.initialBeer});
+
+  final Beer? initialBeer;
 
   @override
   Widget build(BuildContext context) {
@@ -26,6 +29,7 @@ class BeerFormScreen extends StatelessWidget {
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 720),
             child: BeerForm(
+              initialBeer: initialBeer,
               onCancelled: () => context.pop(),
               onSaved: (_) => context.pop(),
             ),
