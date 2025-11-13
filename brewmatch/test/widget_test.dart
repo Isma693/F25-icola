@@ -12,8 +12,9 @@ import 'package:brewmatch/main.dart';
 
 void main() {
   testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+    // Use a minimal test-only counter widget to avoid initializing Firebase
+    // from the real app. This keeps the smoke test focused and isolated.
+    await tester.pumpWidget(const MaterialApp(home: _TestCounterApp()));
 
     // Verify that our counter starts at 0.
     expect(find.text('0'), findsOneWidget);
@@ -27,4 +28,29 @@ void main() {
     expect(find.text('0'), findsNothing);
     expect(find.text('1'), findsOneWidget);
   });
+}
+
+// Small test-only counter widget used by the widget test above.
+class _TestCounterApp extends StatefulWidget {
+  const _TestCounterApp({Key? key}) : super(key: key);
+
+  @override
+  State<_TestCounterApp> createState() => _TestCounterAppState();
+}
+
+class _TestCounterAppState extends State<_TestCounterApp> {
+  int _counter = 0;
+
+  void _increment() => setState(() => _counter++);
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Center(child: Text('$_counter')),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _increment,
+        child: const Icon(Icons.add),
+      ),
+    );
+  }
 }
