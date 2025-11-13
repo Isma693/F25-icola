@@ -19,9 +19,9 @@ Les clients peuvent **filtrer les bières selon leurs goûts** (amertume, sucre,
 ### ✅ **MVP (Minimum Viable Product)**
 - Filtrage des bières selon les **préférences gustatives**
 - Consultation d’une **fiche détaillée** pour chaque bière  
-- **Gestion du catalogue (CRUD)** : ajout, modification, suppression  
+- **Gestion du catalogue (CRUD)** : formulaires admin (bières & ingrédients) branchés sur **Firestore**  
 - **Interface client et admin** sur un seul appareil (iPad du bar)  
-- **Authentification sécurisée** via Firebase Auth  
+- **Authentification sécurisée** via Firebase Auth + **verrou secondaire** (reauth obligatoire pour entrer dans l’admin)  
 - **Localisation FR/EN** (critère obligatoire d’évaluation)  
 
 ### 💡 **NiceToHave (phase 2)**
@@ -47,29 +47,27 @@ Les clients peuvent **filtrer les bières selon leurs goûts** (amertume, sucre,
 ```plaintext
 /lib
   main.dart
-  app.dart
-  constants/
   core/
-    models/
-    services/
-    widgets/
-  features/
-    client/
-      screens/
-      widgets/
-    admin/
-      screens/
-      widgets/
+    navigation/         # RootApp (GoRouter), transitions
+    state/              # AppState (mode client/admin, auto-lock)
+    models/             # beer.dart, ingredient.dart, taste_profile.dart, ...
+    services/           # auth_service.dart, firestore_service.dart,
+                        # admin_catalog_repository.dart, localized_text.dart
+    widgets/            # composants partagés (detail cards, lists, etc.)
+  screens/
+    client/             # home_screen.dart, beer_detail_screen.dart, ...
+    admin/              # dashboard, forms, lists, unlock/login, settings
+    alcotest_screen.dart
+  firebase_options.dart
   l10n/
   themes/
-firebase_options.dart
 ```
 
-**Models** : beer.dart, ingredient.dart, taste_profile.dart
-**Services** : firestore_service.dart, auth_service.dart, beer_filter_service.dart, localized_text.dart
-**Features** :
-	-	/client/ → interface de sélection et navigation utilisateur
-	-	/admin/ → tableau de bord, édition du catalogue et statistiques
+**Features clefs**
+- `/screens/client` : interface publique (filtres, fiches bières, navigation GoRouter).
+- `/screens/admin` : accès sécurisé (unlock → dashboard → formulaires Firestore).
+- `core/services/admin_catalog_repository.dart` centralise les CRUD bières/ingrédients.
+- `core/state/app_state.dart` gère le mode, le verrou secondaire et l’auto-verrouillage.
 
 ---
 
@@ -104,13 +102,26 @@ flutterfire configure
 flutter run
 ```
 
+### 🔒 Accès admin & logique de sécurité
+1. Connecte un compte administrateur via Firebase Auth (identifiants internes).  
+2. Depuis l’app, ouvre le menu client → `Unlock admin`, puis ressaisis le mot de passe : nous effectuons une **reauth Firebase** acting as secondary lock.  
+3. L’espace admin se reverrouille automatiquement après un retour en mode client ou une période d’inactivité défini côté `AppState`.  
+
+> Les formulaires `Ingrédients` et `Bières` utilisent `AdminCatalogRepository` pour créer/mettre à jour les documents Firestore et alimentent directement les listes admin (sélection dynamique d’ingrédients, creation dialog, etc.).
+
+### 🔧 Tests & vérifications
+```bash
+flutter analyze   # quelques warnings connus restent (avoid_print, file naming…)
+flutter test
+```
+
 ## 🚀 Livraison MVP (phase actuelle)
 Inclura :
 -	Gestion complète des bières et ingrédients
 -	Interface client fonctionnelle (sélection par critères gustatifs)
 -	Interface admin fluide (CRUD, authentification, basculement de mode)
--	Traduction FR/EN de l’interface
--	Déploiement sur tablette
+-	Traduction de l’interface automatisée
+-	Déploiement sur portable et tablette
 
 ## livraisons futures envisagées
 -	Statistiques des utilisations clients (préférences et tendances)
