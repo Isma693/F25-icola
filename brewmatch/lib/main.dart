@@ -1,8 +1,6 @@
 // ignore_for_file: avoid_print, use_build_context_synchronously
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'firebase_options.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'core/models/ingredient.dart';
 // ...existing code... (beer model import removed - unused in this debug runner)
@@ -11,7 +9,7 @@ import 'core/services/auth_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'core/services/firestore_service.dart';
 
-void main() async {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   runApp(const MyApp());
