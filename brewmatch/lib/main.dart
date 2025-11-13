@@ -2,11 +2,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 
-import 'core/models/ingredient.dart';
-// ...existing code... (beer model import removed - unused in this debug runner)
-import 'core/services/localized_text.dart';
-import 'core/services/auth_service.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'firebase_options.dart';
+import 'core/navigation/root_app.dart';
 import 'core/services/firestore_service.dart';
 
 Future<void> main() async {

@@ -16,6 +16,7 @@ class AdminDashboardScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final appState = AppStateScope.of(context);
+    appState.refreshAdminSession();
 
     return Scaffold(
       appBar: AppBar(

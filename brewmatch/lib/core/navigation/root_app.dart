@@ -1,11 +1,15 @@
+import 'dart:async';
+
 import 'package:brewmatch/screens/admin/ingredient_form_screen.dart';
 import 'package:brewmatch/screens/admin/login_screen.dart';
 import 'package:brewmatch/screens/admin/settings_screen.dart';
 import 'package:brewmatch/screens/admin/myBeers_screen.dart';
 import 'package:brewmatch/core/widgets/beer_menu.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/models/beer.dart';
 import '../../screens/client/home_screen.dart';
 import '../../screens/client/beer_detail_screen.dart';
 import '../widgets/ingredient_detail_screen.dart';
@@ -35,30 +39,23 @@ class _RootAppState extends State<RootApp> {
   late final AppState _appState;
   // _router coordonne l’ensemble des routes GoRouter avec transitions custom.
   late final GoRouter _router;
+  late final _RouterRefreshNotifier _routerRefreshNotifier;
+  StreamSubscription<User?>? _authSubscription;
+  User? _currentUser;
+  bool _authReady = false;
 
   @override
   void initState() {
     super.initState();
     // On initialise l’état global une seule fois à la création du widget racine.
     _appState = AppState();
+    _routerRefreshNotifier = _RouterRefreshNotifier([_appState]);
     // Configuration centralisée de GoRouter : redirections et arborescence des pages.
     _router = GoRouter(
-      initialLocation: LoginScreen.routeName,
+      initialLocation: ClientHomeScreen.routePath,
       debugLogDiagnostics: false,
-      refreshListenable: _appState,
-      redirect: (context, state) {
-        // Vérification des routes admin protégées par l’écran de déverrouillage.
-        final isAdminRoute = state.matchedLocation.startsWith('/admin');
-        final isUnlockRoute = state.matchedLocation == AdminUnlockScreen.routeName;
-
-        if (isAdminRoute && !_appState.isAdminUnlocked && !isUnlockRoute) {
-          return AdminUnlockScreen.routeName;
-        }
-        if (isUnlockRoute && _appState.isAdminUnlocked) {
-          return AdminDashboardScreen.routePath;
-        }
-        return null;
-      },
+      refreshListenable: _routerRefreshNotifier,
+      redirect: _onRedirect,
       routes: [
         _buildRoute(
           path: LoginScreen.routeName,
@@ -153,7 +150,10 @@ class _RootAppState extends State<RootApp> {
             ),
             _buildRoute(
               path: 'beers/form',
-              builder: (context, state) => const BeerFormScreen(),
+              builder: (context, state) {
+                final beer = state.extra is Beer ? state.extra as Beer : null;
+                return BeerFormScreen(initialBeer: beer);
+              },
               transition: _slideUpTransition,
             ),
           ],
@@ -175,11 +175,15 @@ class _RootAppState extends State<RootApp> {
         ),
       ],
     );
+
+    _authSubscription = FirebaseAuth.instance.authStateChanges().listen(_handleAuthStateChanged);
   }
 
   @override
   void dispose() {
     // Nettoyage des écouteurs pour éviter les fuites mémoire.
+    _authSubscription?.cancel();
+    _routerRefreshNotifier.dispose();
     _router.dispose();
     _appState.dispose();
     super.dispose();
@@ -204,10 +208,55 @@ class _RootAppState extends State<RootApp> {
             locale: _appState.locale,
             supportedLocales: const [Locale('en'), Locale('fr')],
             routerConfig: _router,
+            builder: (context, child) {
+              if (!_authReady) {
+                return const _StartupLoader();
+              }
+              return child ?? const SizedBox.shrink();
+            },
           ),
         );
       },
     );
+  }
+
+  void _handleAuthStateChanged(User? user) {
+    setState(() {
+      _currentUser = user;
+      _authReady = true;
+    });
+
+    if (user == null) {
+      _appState.lockAdmin();
+    }
+    _routerRefreshNotifier.trigger();
+  }
+
+  //centralizes navigation rules: unauthenticated users are forced to /login, authenticated ones leave /login for /client
+  String? _onRedirect(BuildContext context, GoRouterState state) {
+    // Bloque l’UI tant que l’état FirebaseAuth n’est pas déterminé.
+    if (!_authReady) {
+      return null;
+    }
+
+    final isAuthenticated = _currentUser != null;
+    final isLoginRoute = state.matchedLocation == LoginScreen.routeName;
+    final isAdminRoute = state.matchedLocation.startsWith('/admin');
+    final isUnlockRoute = state.matchedLocation == AdminUnlockScreen.routeName;
+
+    if (!isAuthenticated && !isLoginRoute) {
+      return LoginScreen.routeName;
+    }
+    if (isAuthenticated && isLoginRoute) {
+      return ClientHomeScreen.routePath;
+    }
+    if (isAdminRoute && !_appState.isAdminUnlocked && !isUnlockRoute) {
+      return AdminUnlockScreen.routeName;
+    }
+    if (isUnlockRoute && _appState.isAdminUnlocked) {
+      return AdminDashboardScreen.routePath;
+    }
+    return null;
   }
 
   GoRoute _buildRoute({
@@ -227,6 +276,41 @@ class _RootAppState extends State<RootApp> {
         transitionsBuilder: transition,
       ),
       routes: routes,
+    );
+  }
+}
+
+class _RouterRefreshNotifier extends ChangeNotifier {
+  _RouterRefreshNotifier(List<Listenable> listenables) : _listenables = listenables {
+    for (final listenable in _listenables) {
+      listenable.addListener(_onChildChanged);
+    }
+  }
+
+  final List<Listenable> _listenables;
+
+  void trigger() => notifyListeners();
+
+  void _onChildChanged() => notifyListeners();
+
+  @override
+  void dispose() {
+    for (final listenable in _listenables) {
+      listenable.removeListener(_onChildChanged);
+    }
+    super.dispose();
+  }
+}
+
+class _StartupLoader extends StatelessWidget {
+  const _StartupLoader();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Scaffold(
+      body: Center(
+        child: CircularProgressIndicator(),
+      ),
     );
   }
 }
