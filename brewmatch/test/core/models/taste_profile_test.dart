@@ -1,15 +1,8 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:brewmatch/core/models/taste_profile.dart';
 import 'package:brewmatch/core/models/beer.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-
-class MockDocumentReference implements DocumentReference<Map<String, dynamic>> {
-  final String path;
-  MockDocumentReference(this.path);
-  
-  @override
-  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
-}
 
 void main() {
   group('TasteProfile', () {
@@ -73,6 +66,10 @@ void main() {
     });
 
     test('should calculate match score with a beer', () {
+      final firestore = FakeFirebaseFirestore();
+      final DocumentReference<Map<String, dynamic>> ingredientRef =
+          firestore.collection('ingredients').doc('1');
+
       final profile = TasteProfile(
         bitternessLevel: 7.0,
         sweetnessLevel: 3.0,
@@ -88,7 +85,7 @@ void main() {
         bitternessLevel: 7.0,
         sweetnessLevel: 3.0,
         carbonationLevel: 4.0,
-        ingredients: [MockDocumentReference('ingredients/1')],
+        ingredients: [ingredientRef],
       );
 
       final score = profile.calculateMatchScore(beer);
