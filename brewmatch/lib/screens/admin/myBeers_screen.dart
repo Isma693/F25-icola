@@ -1,16 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../core/widgets/beer_menu.dart';
-import '../client/home_screen.dart';
+import '../../core/models/beer.dart';
+import '../../core/services/admin_catalog_repository.dart';
 import 'beer_form_screen.dart';
 
-/// Écran temporaire qui encapsule le catalogue de bières pour l’espace admin.
-/// TODO: enrichir avec filtres avancés et actions CRUD.
-class MyBeersScreen extends StatelessWidget {
+/// Liste des bières côté admin avec accès rapide à l’édition.
+class MyBeersScreen extends StatefulWidget {
   static const routeSegment = 'beers';
 
   const MyBeersScreen({super.key});
+
+  @override
+  State<MyBeersScreen> createState() => _MyBeersScreenState();
+}
+
+class _MyBeersScreenState extends State<MyBeersScreen> {
+  final AdminCatalogRepository _repository = AdminCatalogRepository();
 
   @override
   Widget build(BuildContext context) {
@@ -18,17 +24,63 @@ class MyBeersScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Mes Bières'),
       ),
-      body: BeerListScreen(
-        filters: null,
-        onBeerTap: (beer) => context.push(
-          '${ClientHomeScreen.routePath}/beers/${beer.id}',
-          extra: beer,
-        ),
+      body: StreamBuilder<List<Beer>>(
+        stream: _repository.watchBeers(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          final beers = snapshot.data ?? [];
+          if (beers.isEmpty) {
+            return const _EmptyBeers();
+          }
+          return ListView.separated(
+            padding: const EdgeInsets.all(20),
+            itemCount: beers.length,
+            separatorBuilder: (_, __) => const Divider(),
+            itemBuilder: (context, index) {
+              final beer = beers[index];
+              return ListTile(
+                title: Text(beer.name['fr'] ?? beer.localizedName('fr')),
+                subtitle: Text('${beer.style} · ${beer.alcoholLevel.toStringAsFixed(1)}%'),
+                trailing: IconButton(
+                  icon: const Icon(Icons.edit),
+                  onPressed: () => _openForm(beer),
+                ),
+                onTap: () => _openForm(beer),
+              );
+            },
+          );
+        },
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => context.push(BeerFormScreen.routePath),
+        onPressed: () => _openForm(null),
         tooltip: 'Ajouter une bière',
         child: const Icon(Icons.add),
+      ),
+    );
+  }
+
+  Future<void> _openForm(Beer? beer) {
+    return context.push(
+      BeerFormScreen.routePath,
+      extra: beer,
+    );
+  }
+}
+
+class _EmptyBeers extends StatelessWidget {
+  const _EmptyBeers();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Center(
+      child: Padding(
+        padding: EdgeInsets.all(32),
+        child: Text(
+          'Aucune bière n’est enregistrée pour l’instant.\nAjoute ta première référence.',
+          textAlign: TextAlign.center,
+        ),
       ),
     );
   }
