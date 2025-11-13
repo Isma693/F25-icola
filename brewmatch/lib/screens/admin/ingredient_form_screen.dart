@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../core/widgets/ingredient_list.dart';
 import '../../core/widgets/ingredient_detail_screen.dart';
+import '../../core/widgets/ingredient_list.dart';
+import 'widgets/ingredient_form.dart';
 
 /// Lists ingredients available to administrators.
 /// TODO: Replace mock data with Firestore-backed list and editing actions.
@@ -60,8 +61,17 @@ class IngredientFormScreen extends StatelessWidget {
           onPressed: () => context.pop(),
         ),
       ),
-      body: const Center(
-        child: Text('Formulaire d’ingrédient à venir.'),
+      body: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 520),
+            child: IngredientForm(
+              onCancelled: () => context.pop(),
+              onSaved: (_) => context.pop(),
+            ),
+          ),
+        ),
       ),
     );
   }
