@@ -1,7 +1,8 @@
-import 'package:brewmatch/screens/admin/ingredient_form_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/models/beer.dart';
+import 'widgets/beer_form.dart';
 import '../../core/state/app_state.dart';
 
 /// Placeholder for the beer creation/editing form in the admin flow.
@@ -9,7 +10,9 @@ import '../../core/state/app_state.dart';
 class BeerFormScreen extends StatelessWidget {
   static const routePath = '/admin/beers/form';
 
-  const BeerFormScreen({super.key});
+  const BeerFormScreen({super.key, this.initialBeer});
+
+  final Beer? initialBeer;
 
   @override
   Widget build(BuildContext context) {
@@ -22,59 +25,17 @@ class BeerFormScreen extends StatelessWidget {
           onPressed: () => context.pop(),
         ),
       ),
-      body: SingleChildScrollView(
+      body: Padding(
         padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Configuration de la fiche',
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 720),
+            child: BeerForm(
+              initialBeer: initialBeer,
+              onCancelled: () => context.pop(),
+              onSaved: (_) => context.pop(),
             ),
-            const SizedBox(height: 16),
-            const Text(
-              'Ce formulaire permettra bientôt de définir une bière et de la publier dans BrewMatch.',
-            ),
-            const SizedBox(height: 24),
-            const TextField(
-              decoration: InputDecoration(labelText: 'Nom de la bière'),
-            ),
-            const SizedBox(height: 12),
-            const TextField(
-              decoration: InputDecoration(labelText: 'Style'),
-            ),
-            const SizedBox(height: 12),
-            const TextField(
-              decoration: InputDecoration(labelText: 'Taux d’alcool (%)'),
-            ),
-            const SizedBox(height: 12),
-            const TextField(
-              maxLines: 3,
-              decoration: InputDecoration(labelText: 'Description'),
-            ),
-            const SizedBox(height: 24),
-            ElevatedButton.icon(
-              onPressed: () => context.push(IngredientListScreen.routePath),
-              icon: const Icon(Icons.spa),
-              label: const Text('Sélectionner des ingrédients'),
-            ),
-            const SizedBox(height: 24),
-            FilledButton(
-              onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Bientôt : sauvegarder cette bière dans Firestore.'),
-                  ),
-                );
-              },
-              child: const Text('Enregistrer (désactivé)'),
-            ),
-            const SizedBox(height: 12),
-            TextButton(
-              onPressed: () => context.pop(),
-              child: const Text('Annuler'),
-            ),
-          ],
+          ),
         ),
       ),
     );

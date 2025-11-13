@@ -9,6 +9,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/models/beer.dart';
 import '../../screens/client/home_screen.dart';
 import '../../screens/client/beer_detail_screen.dart';
 import '../widgets/ingredient_detail_screen.dart';
@@ -149,7 +150,10 @@ class _RootAppState extends State<RootApp> {
             ),
             _buildRoute(
               path: 'beers/form',
-              builder: (context, state) => const BeerFormScreen(),
+              builder: (context, state) {
+                final beer = state.extra is Beer ? state.extra as Beer : null;
+                return BeerFormScreen(initialBeer: beer);
+              },
               transition: _slideUpTransition,
             ),
           ],
