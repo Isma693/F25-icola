@@ -48,7 +48,7 @@ class AuthService {
         error: e,
       );
       // Rethrow to let UI/consumer decide how to present the error
-      throw e;
+      rethrow;
     } catch (e, st) {
       developer.log(
         'signIn unexpected error: $e',
@@ -81,7 +81,7 @@ class AuthService {
         name: 'AuthService',
         error: e,
       );
-      throw e;
+      rethrow;
     } catch (e, st) {
       developer.log(
         'signUp unexpected error: $e',
